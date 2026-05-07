@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bruno &amp; Sara — 6 de Noviembre 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.lordicon.com/lordicon.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A84C; --gold2: #E8D5A3; --gold3: #8B6914;
+    --ink: #0D0B08; --ink2: #1E1A14; --ink3: #2C2518;
+    --cream: #FAF6EE; --cream2: #F2EAD8; --muted: #9A8A6A; --muted2: #6A5A3A;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--ink); font-family: 'Cormorant Garamond', serif; min-height: 100vh; overflow-x: hidden; }
+  #starsCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+
+  /* YOUTUBE PLAYER — hidden, controls music */
+  #ytPlayer-wrap { position: fixed; bottom: -200px; right: -200px; width: 1px; height: 1px; overflow: hidden; pointer-events: none; z-index: 490; }
+  #ytPlayer { width: 200px; height: 200px; border: none; }
+
+  /* MUSIC BTN */
+  #musicBtn {
+    position: fixed; bottom: 24px; right: 24px; z-index: 500;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(201,168,76,0.12); border: 0.5px solid rgba(201,168,76,0.35);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s; backdrop-filter: blur(8px);
+  }
+  #musicBtn.show { display: flex; }
+  #musicBtn:hover { background: rgba(201,168,76,0.22); border-color: var(--gold); }
+  #musicBtn svg { width: 17px; height: 17px; stroke: var(--gold2); fill: none; stroke-width: 1.5; }
+  .icon-play { display: block; }
+  .icon-pause { display: none; }
+  #musicBtn.playing .icon-play { display: none; }
+  #musicBtn.playing .icon-pause { display: block; }
+
+  .music-ripple {
+    position: fixed; bottom: 24px; right: 24px; z-index: 499;
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 0.5px solid rgba(201,168,76,0.25);
+    pointer-events: none; opacity: 0;
+  }
+  .music-ripple.active { animation: ripple 2.5s ease-out infinite; }
+  .music-ripple:nth-child(2).active { animation-delay: 0.85s; }
+  .music-ripple:nth-child(3).active { animation-delay: 1.7s; }
+  @keyframes ripple { 0%{transform:scale(1);opacity:0.5} 100%{transform:scale(2.8);opacity:0} }
+
+  /* ENVELOPE */
+  #envScreen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+    transition: opacity 0.8s, transform 0.8s;
+  }
+  #envScreen.hide { opacity: 0; transform: scale(0.9); pointer-events: none; }
+  .env-names { font-family: 'Cinzel', serif; font-size: clamp(11px,2vw,14px); letter-spacing: 6px; color: var(--muted); text-align: center; }
+  .envelope { width: clamp(260px,50vw,380px); cursor: pointer; filter: drop-shadow(0 20px 60px rgba(201,168,76,0.15)); transition: transform 0.3s, filter 0.3s; }
+  .envelope:hover { transform: translateY(-6px) scale(1.02); filter: drop-shadow(0 30px 80px rgba(201,168,76,0.28)); }
+  .env-body-svg { width: 100%; display: block; }
+  .env-hint { font-size: 11px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; animation: breathe 2.5s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+  /* MAIN */
+  #mainInvite { position: relative; z-index: 10; opacity: 0; transform: translateY(40px); transition: opacity 0.9s 0.3s, transform 0.9s 0.3s; pointer-events: none; }
+  #mainInvite.visible { opacity: 1; transform: none; pointer-events: all; }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 24px; position: relative; }
+  .hero-ornament { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 6px; color: var(--gold3); text-transform: uppercase; margin-bottom: 24px; opacity: 0; animation: fadeUp 1s 0.5s forwards; }
+  .hero-names { font-family: 'Cinzel', serif; font-size: clamp(40px,10vw,88px); font-weight: 400; color: var(--cream); line-height: 1; letter-spacing: 4px; opacity: 0; animation: fadeUp 1s 0.7s forwards; }
+  .hero-amp { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--gold); font-size: clamp(52px,14vw,120px); line-height: 0.9; display: block; opacity: 0; animation: fadeUp 1s 0.9s forwards; }
+  .hero-divider { display: flex; align-items: center; gap: 16px; margin: 32px 0; width: min(320px,80vw); opacity: 0; animation: fadeUp 1s 1.1s forwards; }
+  .hdline { flex: 1; height: 0.5px; background: var(--gold3); }
+  .hddiamond { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); flex-shrink: 0; }
+  .hero-date { font-family: 'Cinzel', serif; font-size: clamp(11px,2.5vw,15px); letter-spacing: 5px; color: var(--gold2); opacity: 0; animation: fadeUp 1s 1.3s forwards; }
+  .hero-place { font-size: 13px; letter-spacing: 3px; color: var(--muted); margin-top: 10px; text-transform: uppercase; opacity: 0; animation: fadeUp 1s 1.5s forwards; }
+  .hero-scroll { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0; animation: fadeIn 1s 2s forwards; cursor: pointer; }
+  .scroll-line { width: 0.5px; height: 50px; background: var(--gold3); animation: scrollPulse 2s ease-in-out infinite; transform-origin: top; }
+  .scroll-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; writing-mode: vertical-lr; }
+  @keyframes scrollPulse { 0%,100%{transform:scaleY(1);opacity:0.5} 50%{transform:scaleY(1.3);opacity:1} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  /* COUNTDOWN */
+  .countdown-section { max-width: 640px; margin: 0 auto; padding: 60px 24px; text-align: center; }
+  .section-label { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 5px; color: var(--gold3); text-align: center; margin-bottom: 36px; text-transform: uppercase; }
+  .countdown-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; }
+  .cd-cell { background: var(--ink2); border: 0.5px solid rgba(201,168,76,0.2); padding: 24px 8px; text-align: center; }
+  .cd-num { font-family: 'Cinzel', serif; font-size: clamp(26px,6vw,48px); color: var(--gold2); line-height: 1; }
+  .cd-label { font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-top: 8px; }
+
+  /* QUOTE */
+  .quote-section { text-align: center; padding: 80px 24px; max-width: 700px; margin: 0 auto; }
+  .quote-mark { font-family: 'Cormorant Garamond', serif; font-size: 80px; color: var(--gold3); line-height: 0.5; margin-bottom: 20px; opacity: 0.5; }
+  .quote-text { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: clamp(17px,3.5vw,24px); color: var(--cream2); line-height: 1.9; }
+  .quote-source { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; color: var(--gold3); margin-top: 20px; }
+  .quote-rule { width: 40px; height: 0.5px; background: var(--gold); margin: 20px auto 0; }
+
+  section { max-width: 680px; margin: 0 auto; padding: 60px 24px; }
+
+  /* EVENTS */
+  .events-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .event-card { background: var(--ink2); border: 0.5px solid rgba(201,168,76,0.2); padding: 32px 24px; text-align: center; transition: background 0.3s; }
+  .event-card:hover { background: var(--ink3); }
+  .event-icon { margin-bottom: 14px; }
+  .event-icon svg { width: 26px; height: 26px; stroke: var(--gold); stroke-width: 1; fill: none; }
+  .event-type { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 3px; color: var(--gold3); text-transform: uppercase; margin-bottom: 10px; }
+  .event-name { font-family: 'Cormorant Garamond', serif; font-size: 19px; color: var(--cream); margin-bottom: 6px; line-height: 1.3; }
+  .event-time { font-family: 'Cinzel', serif; font-size: 22px; color: var(--gold); margin-bottom: 10px; }
+  .event-place { font-size: 13px; color: var(--muted); font-style: italic; margin-bottom: 16px; line-height: 1.5; }
+  .map-btn { display: inline-block; padding: 8px 20px; border: 0.5px solid var(--gold3); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: var(--gold3); text-decoration: none; transition: all 0.2s; text-transform: uppercase; }
+  .map-btn:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .dress-block { background: var(--ink2); border: 0.5px solid rgba(201,168,76,0.2); padding: 28px; text-align: center; margin-top: 2px; }
+  .dress-value { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--cream); margin-top: 6px; }
+
+  /* PRICES */
+  .prices-container { background: var(--cream); border: 0.5px solid var(--gold2); position: relative; overflow: hidden; }
+  .prices-inner-border { position: absolute; inset: 8px; border: 0.5px solid rgba(201,168,76,0.4); pointer-events: none; z-index: 1; }
+  .prices-content { padding: 40px 36px; position: relative; z-index: 0; }
+  .prices-title { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 5px; color: var(--gold3); text-align: center; margin-bottom: 28px; text-transform: uppercase; }
+  .price-row { display: flex; justify-content: space-between; align-items: baseline; padding: 13px 0; border-bottom: 0.5px solid #E8D8B8; }
+  .price-row:last-of-type { border-bottom: none; }
+  .price-name { font-size: 17px; color: var(--ink); }
+  .price-amount { font-family: 'Cinzel', serif; font-size: 17px; color: var(--gold3); }
+  .price-note { font-size: 13px; color: var(--muted2); font-style: italic; margin-top: 18px; text-align: center; line-height: 1.8; }
+  .price-deadline { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: #8B3A14; margin-top: 10px; text-align: center; padding: 10px 16px; border: 0.5px solid rgba(139,58,20,0.3); background: rgba(139,58,20,0.05); }
+  .transfer-block { margin-top: 24px; background: var(--ink); padding: 28px 24px; text-align: center; }
+  .transfer-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 3px; color: var(--gold3); text-transform: uppercase; margin-bottom: 14px; }
+  .transfer-alias { font-family: 'Cinzel', serif; font-size: 26px; color: var(--gold2); letter-spacing: 4px; margin-bottom: 8px; }
+  .transfer-cbu { font-size: 13px; color: var(--muted); letter-spacing: 1px; font-family: monospace; margin-bottom: 14px; }
+  .transfer-send { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .transfer-wa { display: inline-block; margin-top: 4px; padding: 10px 28px; background: rgba(40,100,40,0.25); border: 0.5px solid rgba(100,200,100,0.25); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: #8abf8a; text-decoration: none; transition: all 0.2s; text-transform: uppercase; }
+  .transfer-wa:hover { background: rgba(40,100,40,0.5); color: #aaffaa; }
+
+  /* RSVP */
+  .rsvp-outer { background: var(--ink2); border: 0.5px solid rgba(201,168,76,0.22); position: relative; overflow: hidden; }
+  .rsvp-outer-border { position: absolute; inset: 8px; border: 0.5px solid rgba(201,168,76,0.12); pointer-events: none; z-index: 1; }
+  .rsvp-inner { padding: 48px 40px; position: relative; z-index: 0; text-align: center; }
+  .rsvp-heading { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: clamp(26px,5vw,40px); color: var(--cream); margin-bottom: 6px; }
+  .rsvp-sub { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 4px; color: var(--gold3); text-transform: uppercase; margin-bottom: 28px; }
+  .rsvp-intro { font-size: 16px; color: var(--muted); font-style: italic; line-height: 1.8; margin-bottom: 32px; }
+
+  .attend-row { display: flex; justify-content: center; gap: 36px; margin-bottom: 36px; }
+  .attend-opt { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 19px; color: var(--muted); transition: color 0.2s; user-select: none; }
+  .attend-opt:hover { color: var(--cream2); }
+  .radio-ring { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(201,168,76,0.35); position: relative; flex-shrink: 0; transition: border-color 0.2s; }
+  .attend-opt.sel .radio-ring { border-color: var(--gold); }
+  .attend-opt.sel .radio-ring::after { content:''; position:absolute; inset:4px; border-radius:50%; background:var(--gold); }
+  .attend-opt.sel { color: var(--gold2); }
+
+  .rsvp-fields { max-width: 500px; margin: 0 auto; text-align: left; }
+  .rf-group { margin-bottom: 22px; }
+  .rf-label { display: block; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold3); margin-bottom: 10px; }
+  .rf-input, .rf-select, .rf-textarea { width: 100%; background: transparent; border: none; border-bottom: 0.5px solid rgba(201,168,76,0.28); padding: 11px 2px; font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--cream2); outline: none; transition: border-color 0.2s; appearance: none; }
+  .rf-input:focus, .rf-select:focus, .rf-textarea:focus { border-bottom-color: var(--gold); }
+  .rf-input::placeholder, .rf-textarea::placeholder { color: rgba(201,168,76,0.2); }
+  .rf-select { cursor: pointer; }
+  .rf-select option { background: #1E1A14; color: var(--cream2); }
+  .rf-textarea { resize: vertical; min-height: 70px; }
+
+  .counter-row { display: flex; align-items: center; gap: 18px; }
+  .ctr-btn { width: 32px; height: 32px; border-radius: 50%; border: 0.5px solid rgba(201,168,76,0.3); background: transparent; color: var(--gold2); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; line-height: 1; padding-bottom: 2px; }
+  .ctr-btn:hover { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+  .ctr-num { font-family: 'Cinzel', serif; font-size: 24px; color: var(--gold2); min-width: 30px; text-align: center; }
+
+  .food-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fpill { padding: 8px 16px; border: 0.5px solid rgba(201,168,76,0.22); font-family: 'Cormorant Garamond', serif; font-size: 15px; color: var(--muted); cursor: pointer; transition: all 0.2s; user-select: none; }
+  .fpill:hover { border-color: var(--gold3); color: var(--gold2); }
+  .fpill.sel { background: rgba(201,168,76,0.1); border-color: var(--gold); color: var(--gold2); }
+
+  .rsvp-submit { width: 100%; margin-top: 28px; padding: 16px; background: transparent; border: 0.5px solid var(--gold); font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 5px; color: var(--gold2); cursor: pointer; transition: all 0.3s; text-transform: uppercase; position: relative; overflow: hidden; }
+  .rsvp-submit::before { content:''; position:absolute; inset:0; background:var(--gold); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; z-index:0; }
+  .rsvp-submit:hover::before { transform:scaleX(1); }
+  .rsvp-submit:hover { color: var(--ink); }
+  .rsvp-submit span { position:relative; z-index:1; }
+
+  .rsvp-success { display:none; text-align:center; padding:48px 36px; }
+  .success-orn { font-size:34px; color:var(--gold); margin-bottom:18px; animation:spin 6s linear infinite; display:block; }
+  @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .success-title { font-family:'Cinzel',serif; font-size:20px; color:var(--cream); margin-bottom:12px; letter-spacing:2px; }
+  .success-text { font-style:italic; font-size:17px; color:var(--muted); line-height:1.8; }
+
+
+
+  .ornament-divider { text-align:center; color:var(--gold3); font-size:15px; letter-spacing:10px; margin:0 auto; padding:20px 0; display:block; max-width:680px; }
+  footer { text-align:center; padding:60px 24px 100px; position:relative; z-index:10; }
+  .footer-names { font-family:'Cinzel',serif; font-size:18px; letter-spacing:4px; color:var(--gold3); margin-bottom:8px; }
+  .footer-date { font-size:12px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+  #confettiCanvas { position:fixed; inset:0; pointer-events:none; z-index:200; }
+
+  @media (max-width:520px) {
+    .events-grid { grid-template-columns:1fr; }
+    .rsvp-inner, .prices-content { padding:28px 18px; }
+    section { padding:48px 16px; }
+    .attend-row { gap:20px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starsCanvas"></canvas>
+<canvas id="confettiCanvas"></canvas>
+
+<!-- YouTube player container (off-screen, injected on open) -->
+<div id="ytWrap" style="position:fixed;bottom:-300px;right:-300px;width:1px;height:1px;overflow:hidden;pointer-events:none;z-index:490;"></div>
+
+<!-- Music ripples & button (appear after envelope opens) -->
+<div class="music-ripple" id="r1"></div>
+<div class="music-ripple" id="r2"></div>
+<div class="music-ripple" id="r3"></div>
+<div id="musicBtn" onclick="toggleMusic()" title="Música">
+  <svg class="icon-pause" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>
+  <svg class="icon-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" style="fill:var(--gold2);stroke:none"/></svg>
+</div>
+
+<!-- ENVELOPE -->
+<div id="envScreen">
+  <div class="env-names">Bruno &amp; Sara · 6 · XI · 2026</div>
+  <div class="envelope" onclick="openEnvelope()" title="Abrir invitación" style="position:relative">
+    <svg class="env-body-svg" viewBox="0 0 380 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="0.5" y="0.5" width="379" height="249" fill="#1E1A14" stroke="#3A3020"/>
+      <path d="M0 0 L190 145 L380 0" fill="#181410"/>
+      <path d="M0 0 L0 250 L130 145 Z" fill="#161210"/>
+      <path d="M380 0 L380 250 L250 145 Z" fill="#161210"/>
+      <path d="M0 250 L190 145 L380 250 Z" fill="#141008"/>
+      <text x="190" y="195" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#C9A84C" letter-spacing="1">BRUNO</text>
+      <text x="190" y="210" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="18" fill="#C9A84C" font-style="italic">&amp;</text>
+      <text x="190" y="225" text-anchor="middle" font-family="Cinzel, serif" font-size="10" fill="#C9A84C" letter-spacing="1">SARA</text>
+      <path id="svgFlap" d="M0 0 L190 145 L380 0 Z" fill="#241E16" stroke="#3A3020" stroke-width="0.5"/>
+      <rect x="8" y="8" width="364" height="234" stroke="#C9A84C" stroke-width="0.3" fill="none" opacity="0.4"/>
+    </svg>
+    <img src="sello.png" alt="Sello de cera" style="
+      position:absolute;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-68%);
+      width:38%;
+      pointer-events:none;
+      filter:drop-shadow(0 4px 18px rgba(0,0,0,0.7));
+    "/>
+  </div>
+  <div class="env-hint">toca el sobre para abrir</div>
+</div>
+
+<!-- MAIN INVITE -->
+<div id="mainInvite">
+
+  <div class="hero">
+    <div class="hero-ornament">con alegría los invitamos</div>
+    <div class="hero-names">Bruno</div>
+    <div class="hero-amp">&amp;</div>
+    <div class="hero-names">Sara</div>
+    <div class="hero-divider"><div class="hdline"></div><div class="hddiamond"></div><div class="hdline"></div></div>
+    <div class="hero-date">6 · Noviembre · 2026</div>
+    <div class="hero-place">Mendoza, Argentina</div>
+    <div class="hero-scroll" onclick="document.getElementById('countdown').scrollIntoView({behavior:'smooth'})">
+      <div class="scroll-label">ver más</div>
+      <div class="scroll-line"></div>
+    </div>
+  </div>
+
+  <div class="countdown-section" id="countdown">
+    <div class="section-label">faltan</div>
+    <div class="countdown-grid">
+      <div class="cd-cell"><div class="cd-num" id="cdDays">—</div><div class="cd-label">días</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdHours">—</div><div class="cd-label">horas</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdMins">—</div><div class="cd-label">minutos</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdSecs">—</div><div class="cd-label">segundos</div></div>
+    </div>
+  </div>
+
+  <div class="quote-section">
+    <div class="quote-mark">"</div>
+    <div class="quote-text">Es mejor ser dos que uno, porque ambos pueden ayudarse mutuamente a lograr el éxito. Si uno cae, el otro puede darle la mano y ayudarlo...</div>
+    <div class="quote-source">Eclesiastés 4 : 9-10</div>
+    <div class="quote-rule"></div>
+  </div>
+
+  <div class="ornament-divider">— ✦ —</div>
+
+  <section id="eventos">
+    <div class="section-label">programa del día</div>
+    <div class="events-grid">
+      <div class="event-card">
+        <div class="event-icon">
+          <lord-icon src="church.json" trigger="loop" delay="2000" stroke="light" colors="primary:#C9A84C,secondary:#E8D5A3" style="width:52px;height:52px"></lord-icon>
+        </div>
+        <div class="event-type">ceremonia</div>
+        <div class="event-name">Iglesia de los Libres</div>
+        <div class="event-time">17:00 hs</div>
+        <div class="event-place">Mendoza</div>
+        <a class="map-btn" href="https://maps.app.goo.gl/cNK7ggznix4AvSqz7" target="_blank" rel="noopener">Ver ubicación</a>
+      </div>
+      <div class="event-card">
+        <div class="event-icon">
+          <lord-icon src="champagne.json" trigger="loop" delay="2000" stroke="light" colors="primary:#C9A84C,secondary:#E8D5A3" style="width:52px;height:52px"></lord-icon>
+        </div>
+        <div class="event-type">fiesta</div>
+        <div class="event-name">Quinta Las Rosas</div>
+        <div style="display:flex;justify-content:center;gap:24px;align-items:baseline">
+          <div class="event-time">20:30 hs</div>
+          <div style="color:var(--gold3);font-size:12px">·</div>
+          <div class="event-time">23:00 hs</div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-top:-6px">
+          <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;width:72px;text-align:center">Cena</div>
+          <div style="width:12px"></div>
+          <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;width:72px;text-align:center">Baile</div>
+        </div>
+        <div class="event-place">Mendoza</div>
+        <a class="map-btn" href="https://maps.app.goo.gl/ZtWsadx3L3nLw2Ky7" target="_blank" rel="noopener">Ver ubicación</a>
+      </div>
+    </div>
+    <div class="dress-block">
+      <div class="section-label" style="margin-bottom:6px">vestimenta</div>
+      <div class="dress-value">Formal</div>
+    </div>
+  </section>
+
+  <div class="ornament-divider">— ✦ —</div>
+
+  <section id="precios">
+    <div class="section-label">entradas</div>
+    <div class="prices-container">
+      <div class="prices-inner-border"></div>
+      <div class="prices-content">
+        <div class="prices-title">valor de las entradas</div>
+        <div class="price-row"><div class="price-name">Cena</div><div class="price-amount">$94.500</div></div>
+        <div class="price-row"><div class="price-name">Menores de 12 años</div><div class="price-amount">$46.400</div></div>
+        <div class="price-row"><div class="price-name">Solo baile</div><div class="price-amount">$30.600</div></div>
+        <div class="price-note">Las entradas se pueden abonar en 3 a 6 cuotas.<br>Solo por transferencia bancaria.</div>
+        <div class="price-deadline">El total debe estar abonado antes del 1 de octubre de 2026</div>
+        <div class="transfer-block">
+          <div class="transfer-label">datos de transferencia</div>
+          <div class="transfer-alias">BID.SEF</div>
+          <div class="transfer-cbu">CBU: 0110266830026612178983</div>
+          <div class="transfer-send">Enviá el comprobante al:</div>
+          <a class="transfer-wa" href="https://wa.me/5492612064852" target="_blank" rel="noopener">WhatsApp · 261-206 4852</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ornament-divider">— ✦ —</div>
+
+  <section id="rsvp">
+    <div class="section-label">confirmación de asistencia</div>
+    <div class="rsvp-outer">
+      <div class="rsvp-outer-border"></div>
+      <div class="rsvp-inner" id="rsvpForm">
+        <div class="rsvp-heading">Confirmación de Asistencia</div>
+        <div class="rsvp-sub">antes del 1 de octubre de 2026</div>
+        <div class="rsvp-intro">Nos encantaría contar con tu presencia.<br>Por favor confirmanos antes de la fecha indicada.</div>
+
+        <div class="attend-row">
+          <div class="attend-opt" id="optY" onclick="pickAttend('yes')">
+            <div class="radio-ring"></div><span>Asistiré</span>
+          </div>
+          <div class="attend-opt" id="optN" onclick="pickAttend('no')">
+            <div class="radio-ring"></div><span>No Asistiré</span>
+          </div>
+        </div>
+
+        <div class="rsvp-fields">
+          <div class="rf-group">
+            <label class="rf-label">Nombre y Apellido</label>
+            <input class="rf-input" id="rName" type="text" placeholder="Tu nombre completo" autocomplete="name">
+          </div>
+
+          <div class="rf-group">
+            <label class="rf-label">Número de contacto</label>
+            <input class="rf-input" id="rPhone" type="tel" placeholder="Ej: 261-555 1234" autocomplete="tel">
+          </div>
+
+          <div id="extraFields" style="display:none">
+            <div class="rf-group">
+              <label class="rf-label">¿A qué eventos asistís?</label>
+              <select class="rf-select" id="rEvent">
+                <option value="">Seleccioná una opción</option>
+                <option>Ceremonia y fiesta</option>
+                <option>Solo fiesta (cena)</option>
+                <option>Solo baile</option>
+              </select>
+            </div>
+
+            <div class="rf-group">
+              <label class="rf-label">¿Necesitás un menú especial?</label>
+              <div class="food-pills">
+                <div class="fpill" onclick="pickFood(this,'Ninguno')">Ninguno</div>
+                <div class="fpill" onclick="pickFood(this,'Vegetariano')">Vegetariano</div>
+                <div class="fpill" onclick="pickFood(this,'Vegano')">Vegano</div>
+                <div class="fpill" onclick="pickFood(this,'Celíaco')">Celíaco</div>
+                <div class="fpill" onclick="pickFood(this,'Sin mariscos')">Sin mariscos</div>
+              </div>
+            </div>
+
+            <div class="rf-group">
+              <label class="rf-label">Agregar acompañantes</label>
+              <div class="counter-row">
+                <button class="ctr-btn" onclick="chgComp(-1)">−</button>
+                <div class="ctr-num" id="compCount">0</div>
+                <button class="ctr-btn" onclick="chgComp(1)">+</button>
+              </div>
+            </div>
+
+            <div id="compNames"></div>
+
+            <div class="rf-group">
+              <label class="rf-label">Comentarios</label>
+              <textarea class="rf-textarea" id="rComments" placeholder="Alergias, restricciones u otros comentarios..."></textarea>
+            </div>
+          </div>
+
+          <button class="rsvp-submit" onclick="submitRSVP()"><span>Confirmar Asistencia</span></button>
+        </div>
+      </div>
+
+      <div class="rsvp-success" id="rsvpSuccess">
+        <span class="success-orn">✦</span>
+        <div class="success-title" id="sucTitle">¡Gracias!</div>
+        <div class="success-text" id="sucText">Tu confirmación fue recibida.<br>Bruno y Sara están muy felices<br>de contarte entre sus invitados.</div>
+      </div>
+    </div>
+
+
+  </section>
+
+  <footer>
+    <div class="ornament-divider" style="margin-bottom:32px">— ✦ —</div>
+    <div class="footer-names">Bruno &amp; Sara</div>
+    <div class="footer-date">6 · Noviembre · 2026 · Mendoza</div>
+  </footer>
+</div>
+
+<script>
+/* ── STARS ── */
+const sc=document.getElementById('starsCanvas'),sx=sc.getContext('2d');let st=[];
+function initS(){sc.width=innerWidth;sc.height=innerHeight;st=Array.from({length:120},()=>({x:Math.random()*sc.width,y:Math.random()*sc.height,r:Math.random()*1.3+0.2,p:Math.random()*Math.PI*2,s:Math.random()*0.008+0.003}));}
+function drawS(t){sx.clearRect(0,0,sc.width,sc.height);st.forEach(s=>{const a=0.15+0.55*Math.abs(Math.sin(t*s.s+s.p));sx.beginPath();sx.arc(s.x,s.y,s.r,0,Math.PI*2);sx.fillStyle=`rgba(201,168,76,${a})`;sx.fill();});requestAnimationFrame(drawS);}
+initS();requestAnimationFrame(drawS);addEventListener('resize',initS);
+
+/* ── YOUTUBE PLAYER ── */
+const YT_VIDEO_ID = 'BVCBkf9VA-o';
+let isPlaying = false;
+let ytFrame = null;
+
+function startMusic() {
+  // Inject iframe directly on user gesture — Chrome allows autoplay this way
+  const wrap = document.getElementById('ytWrap');
+  wrap.innerHTML = '';
+  ytFrame = document.createElement('iframe');
+  ytFrame.width = '200';
+  ytFrame.height = '200';
+  ytFrame.src = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0&rel=0&modestbranding=1&iv_load_policy=3&mute=0`;
+  ytFrame.allow = 'autoplay; encrypted-media';
+  ytFrame.setAttribute('allowfullscreen', '');
+  ytFrame.style.border = 'none';
+  wrap.appendChild(ytFrame);
+  isPlaying = true;
+  document.getElementById('musicBtn').classList.add('playing');
+  setRipples(true);
+}
+
+function toggleMusic() {
+  if (!ytFrame) { startMusic(); return; }
+  if (isPlaying) {
+    // Pause: reload src without autoplay
+    ytFrame.src = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=0&loop=1&playlist=${YT_VIDEO_ID}&controls=0&rel=0&modestbranding=1`;
+    isPlaying = false;
+    document.getElementById('musicBtn').classList.remove('playing');
+    setRipples(false);
+  } else {
+    // Resume: reload src with autoplay
+    ytFrame.src = `https://www.youtube.com/embed/${YT_VIDEO_ID}?autoplay=1&loop=1&playlist=${YT_VIDEO_ID}&controls=0&rel=0&modestbranding=1`;
+    isPlaying = true;
+    document.getElementById('musicBtn').classList.add('playing');
+    setRipples(true);
+  }
+}
+
+function setRipples(on) {
+  ['r1','r2','r3'].forEach(id => document.getElementById(id).classList.toggle('active', on));
+}
+
+/* ── ENVELOPE ── */
+function openEnvelope() {
+  document.getElementById('svgFlap').style.cssText = 'transition:opacity 0.4s;opacity:0';
+  setTimeout(() => {
+    document.getElementById('envScreen').classList.add('hide');
+    setTimeout(() => {
+      document.getElementById('envScreen').style.display = 'none';
+      document.getElementById('mainInvite').classList.add('visible');
+      document.getElementById('musicBtn').classList.add('show');
+      startMusic();
+    }, 800);
+  }, 300);
+}
+
+/* ── COUNTDOWN ── */
+function upCD(){const tg=new Date('2026-11-06T17:00:00-03:00'),nw=new Date(),df=tg-nw;if(df<=0){['cdDays','cdHours','cdMins','cdSecs'].forEach(id=>document.getElementById(id).textContent='0');return;}const d=Math.floor(df/86400000),h=Math.floor((df%86400000)/3600000),m=Math.floor((df%3600000)/60000),s=Math.floor((df%60000)/1000);document.getElementById('cdDays').textContent=d;document.getElementById('cdHours').textContent=String(h).padStart(2,'0');document.getElementById('cdMins').textContent=String(m).padStart(2,'0');document.getElementById('cdSecs').textContent=String(s).padStart(2,'0');}
+upCD();setInterval(upCD,1000);
+
+/* ── GOOGLE SHEETS ── */
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbz1VhupHyKeVtbj66gxPY4lmLefr2n-JycRmIfkgZcO5B67sPhQry1r04JD2uMcFKy0/exec';
+
+async function sendToSheets(data) {
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch(e) {}
+}
+
+/* ── RSVP ── */
+let asel=null,fsel=null,ncomp=0;
+function pickAttend(v){asel=v;document.getElementById('optY').classList.toggle('sel',v==='yes');document.getElementById('optN').classList.toggle('sel',v==='no');document.getElementById('extraFields').style.display=v==='yes'?'block':'none';}
+function pickFood(el,v){fsel=v;document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('sel'));el.classList.add('sel');}
+function chgComp(d){ncomp=Math.max(0,Math.min(8,ncomp+d));document.getElementById('compCount').textContent=ncomp;renderCF();}
+function renderCF(){const w=document.getElementById('compNames');let h='';for(let i=0;i<ncomp;i++)h+=`<div class="rf-group"><label class="rf-label">Acompañante ${i+1}</label><input class="rf-input" id="cp${i}" type="text" placeholder="Nombre y apellido"></div>`;w.innerHTML=h;}
+
+async function submitRSVP(){
+  const nm=document.getElementById('rName').value.trim();
+  if(!nm){document.getElementById('rName').focus();return;}
+  if(!asel)return;
+  if(asel==='yes'&&!fsel)return;
+
+  const cns=[];
+  for(let i=0;i<ncomp;i++){const e=document.getElementById('cp'+i);if(e)cns.push(e.value.trim());}
+
+  const btn = document.querySelector('.rsvp-submit');
+  btn.disabled = true;
+  btn.querySelector('span').textContent = 'Enviando...';
+
+  const data = {
+    name: nm,
+    phone: document.getElementById('rPhone').value.trim() || '—',
+    attending: asel==='yes',
+    event: asel==='yes' ? (document.getElementById('rEvent').value||'—') : '—',
+    food: fsel||'—',
+    companions: ncomp,
+    compNames: cns.filter(Boolean).join(', ')||'—',
+    comments: (document.getElementById('rComments')||{}).value||'—'
+  };
+
+  await sendToSheets(data);
+
+  if(asel==='no'){
+    document.getElementById('sucTitle').textContent='Gracias por avisarnos';
+    document.getElementById('sucText').innerHTML='Te vamos a extrañar.<br>Bruno y Sara te mandan un abrazo enorme.';
+  }
+  document.getElementById('rsvpForm').style.display='none';
+  document.getElementById('rsvpSuccess').style.display='block';
+  if(asel==='yes') launchConfetti();
+}
+
+/* ── CONFETTI ── */
+const cc=document.getElementById('confettiCanvas'),cx=cc.getContext('2d');let cf=[];
+function launchConfetti(){cc.width=innerWidth;cc.height=innerHeight;cf=Array.from({length:80},()=>({x:Math.random()*cc.width,y:-20,vx:(Math.random()-0.5)*3,vy:Math.random()*4+2,w:Math.random()*8+3,h:Math.random()*4+2,r:Math.random()*360,rv:(Math.random()-0.5)*5,c:['#C9A84C','#E8D5A3','#FAF6EE','#F5E9C8','#8B6914'][Math.floor(Math.random()*5)]}));acf();}
+function acf(){cx.clearRect(0,0,cc.width,cc.height);cf.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.rv;p.vy+=0.05;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r*Math.PI/180);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore();});cf=cf.filter(p=>p.y<cc.height+30);if(cf.length>0)requestAnimationFrame(acf);}
+
+</script>
+</body>
+</html>
