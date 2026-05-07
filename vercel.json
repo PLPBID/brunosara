@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "gatos.jpg", "use": "@vercel/static" },
+    { "src": "church.json", "use": "@vercel/static" },
+    { "src": "champagne.json", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/gatos.jpg", "dest": "/gatos.jpg" },
+    { "src": "/church.json", "dest": "/church.json" },
+    { "src": "/champagne.json", "dest": "/champagne.json" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
